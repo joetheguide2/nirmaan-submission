@@ -45,15 +45,15 @@ const IntroductionForm = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="email">School Email ID</label>
+          <label htmlFor="duration">Duration In Seconds</label>
           <input
-            type="email"
-            id="email"
-            name="email"
+            type="text"
+            id="duration"
+            name="duration"
             value={formData.email}
             onChange={handleChange}
             required
-            placeholder="Enter your school email"
+            placeholder="Enter the duration in sseconds"
           />
         </div>
 
