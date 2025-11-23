@@ -7,8 +7,18 @@ cmds = [
 
 [phases.build]
 cmds = [
-    "cd frontend && npm run build"
+    "cd frontend && npm run build",
+    "cp -r frontend/build backend/build"
 ]
 
 [start]
 cmd = "cd backend && npm start"
+
+[providers.railway]
+build.commands = [
+    "cd backend && npm install",
+    "cd frontend && npm install", 
+    "cd backend/python && pip install -r requirements.txt",
+    "cd frontend && npm run build",
+    "cp -r frontend/build backend/build"
+]
