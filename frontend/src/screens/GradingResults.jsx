@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import './GradingResults.css';
 
 const GradingResults = ({ results, onTryAgain }) => {
+  const location = useLocation();
+  const resultsFromState = location.state?.results || results;
   const navigate = useNavigate();
   const [expandedMetrics, setExpandedMetrics] = useState({});
 
@@ -12,7 +14,7 @@ const GradingResults = ({ results, onTryAgain }) => {
     wordCount = 0,
     speechRate = 0,
     criteriaScores = []
-  } = results || {};
+  } = resultsFromState || {};
 
   const totalMaxScore = criteriaScores.reduce((total, category) => {
     return total + category.metrics.reduce((catTotal, metric) => catTotal + metric.maxScore, 0);

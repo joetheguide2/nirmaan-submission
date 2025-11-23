@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import './IntroductionForm.css';
 
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://nirmaan-submission.up.railway.app';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://nirmaan-submission-production.up.railway.app';
 const IntroductionForm = ({ onGradingComplete }) => {
   const [formData, setFormData] = useState({
     introduction: '',
@@ -63,7 +63,7 @@ const IntroductionForm = ({ onGradingComplete }) => {
         }
         
         // Navigate to results page
-        navigate('/results');
+        navigate('/results', { state: { results: result.data } });
       } else {
         setError(result.message || 'Grading failed. Please try again.');
       }
