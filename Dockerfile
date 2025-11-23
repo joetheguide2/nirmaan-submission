@@ -13,6 +13,8 @@ RUN echo "=== Checking project structure ===" && \
     ls -la && \
     echo "=== Frontend structure ===" && \
     ls -la frontend/ && \
+    echo "=== Checking for public directory ===" && \
+    find . -name "public" -type d && \
     echo "=== Checking for package.json ===" && \
     find . -name "package.json" | head -10
 
@@ -23,11 +25,26 @@ RUN cd backend && npm install
 RUN cd backend/python && python3 -m venv venv && \
     ./venv/bin/pip install -r requirements.txt
 
-# Install and build frontend
-RUN cd frontend && npm install && npm run build
+# Check if frontend has the required structure
+RUN echo "=== Frontend detailed structure ===" && \
+    cd frontend && \
+    ls -la && \
+    echo "=== Public directory contents ===" && \
+    ls -la public/ || echo "No public directory found"
+
+# Install and build frontend (with error handling)
+RUN cd frontend && npm install && \
+    # Create public directory if it doesn't exist
+    mkdir -p public && \
+    # Check if we need to move index.html
+    if [ ! -f public/index.html ] && [ -f ../index.html ]; then \
+        echo "Moving index.html from root to frontend/public" && \
+        cp ../index.html public/; \
+    fi && \
+    npm run build
 
 # Copy frontend build to backend
-RUN cp -r frontend/build backend/build/
+RUN cp -r frontend/build backend/public/ || mkdir -p backend/public && cp -r frontend/build/* backend/public/
 
 # Set working directory to backend
 WORKDIR /app/backend
