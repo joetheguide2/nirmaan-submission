@@ -51,7 +51,7 @@ app.post('/api/analyze-introduction', (req, res) => {
 
     // Call Python script with proper Java configuration
     const pythonProcess = spawn('python', [
-    './python/grading_api.py', 
+    './python/main.py', 
     JSON.stringify({
         introduction: introduction,
         duration: parseFloat(duration)
