@@ -60,7 +60,7 @@ app.post('/api/analyze-introduction', (req, res) => {
         env: {
             ...process.env,
             'JAVA_HOME': '/home/joetheguide/.jdks/openjdk-24.0.2', // Adjust path as needed
-            'PATH': process.env.PATH + '/home/joetheguide/.jdks/openjdk-24.0.2/bin'
+            'PATH': `/home/joetheguide/.jdks/openjdk-24.0.2/bin:${process.env.PATH}`
         }
         });
 
