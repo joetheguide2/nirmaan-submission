@@ -7,85 +7,48 @@ import re
 import json
 import sys
 
+# PRE-LOAD ALL MODELS AT MODULE LEVEL (only once)
+print("Loading models...", file=sys.stderr)
+SENTENCE_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+GRAMMAR_TOOL = language_tool_python.LanguageTool('en-US')
+SENTIMENT_ANALYZER = SentimentIntensityAnalyzer()
+print("Models loaded successfully!", file=sys.stderr)
+
 
 def check_flow_order(text, model=None):
     """
     Checks if the text follows the correct flow order:
     Salutation -> Name -> Mandatory -> Optional (if present) -> Closing
-    
-    Returns:
-        dict: Contains flow status and detailed information
     """
-    if model is None:
-        flow_model = SentenceTransformer('all-MiniLM-L6-v2')
-    else:
-        flow_model = model
+    # Use pre-loaded model
+    flow_model = model if model is not None else SENTENCE_MODEL
     
-    # Define comprehensive patterns for each section
     patterns = {
         'salutation': [
             r'\b(hi|hello|hey|greetings)\b',
-            r'\bhey there\b',
-            r'\bhi there\b',
-            r'\bhello there\b',
-            r'\bhi all\b',
-            r'\bhey all\b',
-            r'\bhi team\b',
-            r'\bhello team\b',
-            r'\bhey team\b',
-            r'\bhi everyone\b',
-            r'\bhello everyone\b',
-            r'\bhey everyone\b',
-            r'\bgood morning\b',
-            r'\bgood afternoon\b',
-            r'\bgood evening\b',
-            r'\bgood day\b',
-            r'\bthrilled to\b',
-            r'\bpleased to\b',
-            r'\bexcited to\b',
+            r'\bhey there\b', r'\bhi there\b', r'\bhello there\b',
+            r'\bhi all\b', r'\bhey all\b', r'\bhi team\b', r'\bhello team\b', r'\bhey team\b',
+            r'\bhi everyone\b', r'\bhello everyone\b', r'\bhey everyone\b',
+            r'\bgood morning\b', r'\bgood afternoon\b', r'\bgood evening\b', r'\bgood day\b',
+            r'\bthrilled to\b', r'\bpleased to\b', r'\bexcited to\b',
         ],
         'name': [
-            r'\bmy name is\b',
-            r'\bmyself\b',
-            r'\bi am\b',
-            r'\bi\'m\b',
-            r'\bcalled\b',
-            r'\bi go by\b',
-            r'\bpeople call me\b',
-            r'\byou can call me\b',
+            r'\bmy name is\b', r'\bmyself\b', r'\bi am\b', r'\bi\'m\b', r'\bcalled\b',
+            r'\bi go by\b', r'\bpeople call me\b', r'\byou can call me\b',
         ],
         'mandatory': [
-            r'\byears old\b',
-            r'\bage\b',
-            r'\bold\b',
-            r'\bschool\b',
-            r'\bof class\b',
-            r'\bin grade\b',
-            r'\bfamily\b',
-            r'\bparents\b',
-            r'\bmother\b',
-            r'\bfather\b',
-            r'\bsiblings\b',
+            r'\byears old\b', r'\bage\b', r'\bold\b', r'\bschool\b', r'\bof class\b',
+            r'\bin grade\b', r'\bfamily\b', r'\bparents\b', r'\bmother\b', r'\bfather\b', r'\bsiblings\b',
         ],
         'optional': [
-            r'\bhobbies\b',
-            r'\binterests\b',
-            r'\blike to\b',
-            r'\benjoy\b',
-            r'\bgoal\b',
-            r'\bdream\b',
-            r'\bambition\b',
+            r'\bhobbies\b', r'\binterests\b', r'\blike to\b', r'\benjoy\b',
+            r'\bgoal\b', r'\bdream\b', r'\bambition\b',
         ],
         'closing': [
-            r'\bthank you\b',
-            r'\bthanks\b',
-            r'\bthat\'s all\b',
-            r'\bthat\'s it\b',
-            r'\bthat\'s me\b',
+            r'\bthank you\b', r'\bthanks\b', r'\bthat\'s all\b', r'\bthat\'s it\b', r'\bthat\'s me\b',
         ]
     }
     
-    # Split into sentences
     sentences = re.split(r'[.!?]+', text)
     sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 5]
     
@@ -97,7 +60,6 @@ def check_flow_order(text, model=None):
             'issue': 'Introduction too short (less than 3 sentences)'
         }
     
-    # Match sentences to sections
     sentence_sections = []
     
     for i, sentence in enumerate(sentences):
@@ -113,11 +75,7 @@ def check_flow_order(text, model=None):
                 break
         
         if matched_section:
-            sentence_sections.append({
-                'index': i,
-                'section': matched_section,
-                'sentence': sentence
-            })
+            sentence_sections.append({'index': i, 'section': matched_section, 'sentence': sentence})
     
     if not sentence_sections:
         return {
@@ -127,14 +85,12 @@ def check_flow_order(text, model=None):
             'issue': 'No recognizable sections found'
         }
     
-    # Get first occurrence of each section
     found_sections = {}
     for item in sentence_sections:
         section = item['section']
         if section not in found_sections:
             found_sections[section] = item['index']
     
-    # Check for required sections
     required = ['salutation', 'name', 'mandatory', 'closing']
     missing = [s for s in required if s not in found_sections]
     
@@ -146,7 +102,6 @@ def check_flow_order(text, model=None):
             'issue': f'Missing required sections: {", ".join(missing)}'
         }
     
-    # Check order
     order_issues = []
     if found_sections['salutation'] >= found_sections['name']:
         order_issues.append('Salutation should come before name')
@@ -180,13 +135,12 @@ def check_flow_order(text, model=None):
 
 
 def calculate_positive_word_probability(text):
-    analyzer = SentimentIntensityAnalyzer()
     words = re.findall(r'\b\w+\b', text.lower())
     total_words = len(words) if words else 1  
     
     positive_words = []
     for word in words:
-        word_score = analyzer.lexicon.get(word, 0)
+        word_score = SENTIMENT_ANALYZER.lexicon.get(word, 0)
         if word_score > 0:
             positive_words.append(word)
     
@@ -198,20 +152,17 @@ def calculate_positive_word_probability(text):
 
 def get_grammar_error_count(text):
     try:
-        tool = language_tool_python.LanguageTool('en-US')
-        matches = tool.check(text)
+        matches = GRAMMAR_TOOL.check(text)
         error_details = []
         
-        for match in matches[:5]:  # Limit to first 5 errors for brevity
+        for match in matches[:5]:
             error_details.append({
                 'message': match.message,
                 'context': match.context,
                 'suggestions': match.replacements[:3] if match.replacements else []
             })
         
-        error_count = len(matches)
-        tool.close()
-        return error_count, error_details
+        return len(matches), error_details
     except Exception as e:
         print(f"Grammar check error: {e}", file=sys.stderr)
         return 0, []
@@ -219,7 +170,8 @@ def get_grammar_error_count(text):
 
 class KeywordGrader:
     def __init__(self):
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+        # Use pre-loaded model
+        self.model = SENTENCE_MODEL
         
         self.keyword_categories = {
             "name": {"weight": 4, "keywords": ["name", "called", "myself", "I am"]},
@@ -277,7 +229,9 @@ class KeywordGrader:
         return total_score, matches_found, missing_categories
 
 
+# Initialize keyword grader once
 keyword_grader = KeywordGrader()
+
 
 def grade(text, gradingCriterion, subCriterion, weights, duration):
     scores = defaultdict(int)
@@ -485,13 +439,13 @@ def grade(text, gradingCriterion, subCriterion, weights, duration):
             scores[criteria] = score
             feedback = {
                 'positivity_score': prob,
-                'positive_words': positive_words[:10],  # Show first 10
+                'positive_words': positive_words[:10],
                 'rating': rating,
                 'suggestion': 'Add more positive and engaging words' if score < 12 else 'Great positive tone!'
             }
 
         elif criteria == 'Flow':
-            flow_result = check_flow_order(text)
+            flow_result = check_flow_order(text, SENTENCE_MODEL)
             if flow_result['is_correct']:
                 scores[criteria] = 5
             else:
@@ -511,17 +465,10 @@ def grade(text, gradingCriterion, subCriterion, weights, duration):
 
 
 def analyze_introduction(text, duration):
-    """
-    Main function to analyze introduction and return structured results
-    """
-    gradingCriterion = [
-        "ContentAndStucture",
-        "SpeechRate", 
-        "LanguageAndGrammar",
-        "Clarity",
-        "Engagement"
-    ]
-
+    """Main function to analyze introduction and return structured results"""
+    print(f"Analyzing text of {len(text.split())} words...", file=sys.stderr)
+    
+    gradingCriterion = ["ContentAndStucture", "SpeechRate", "LanguageAndGrammar", "Clarity", "Engagement"]
     subCriterion = {
         "ContentAndStucture": ['Salutation', 'KeyWord', 'Flow'],
         "SpeechRate": ['SpeechRate'],
@@ -529,29 +476,16 @@ def analyze_introduction(text, duration):
         "Clarity": ['FillerWordRate'],
         "Engagement": ['Sentiment']
     }
-
     weights = {
-        'Salutation': 5, 
-        'KeyWord': 30, 
-        'Flow': 5,
-        'SpeechRate': 10,
-        'Error': 10, 
-        'Richness': 10,
-        'FillerWordRate': 15,
-        'Sentiment': 15
+        'Salutation': 5, 'KeyWord': 30, 'Flow': 5, 'SpeechRate': 10,
+        'Error': 10, 'Richness': 10, 'FillerWordRate': 15, 'Sentiment': 15
     }
 
-    # Calculate scores with detailed feedback
     scores, detailed_feedback = grade(text, gradingCriterion, subCriterion, weights, duration)
-    
-    # Calculate overall score
     overall_score = sum(scores.values())
-    
-    # Calculate speech rate
     word_count = len(text.split())
     speech_rate = word_count / (duration / 60) if duration > 0 else 0
     
-    # Structure the response for UI
     result = {
         "overallScore": overall_score,
         "totalDuration": duration,
@@ -561,88 +495,50 @@ def analyze_introduction(text, duration):
             {
                 "category": "Content & Structure",
                 "metrics": [
-                    {
-                        "name": "Salutation Level",
-                        "score": scores.get('Salutation', 0),
-                        "maxScore": weights['Salutation'],
-                        "feedback": f"Salutation effectiveness: {scores.get('Salutation', 0)}/{weights['Salutation']}",
-                        "details": detailed_feedback.get('Salutation', {})
-                    },
-                    {
-                        "name": "Keyword Presence", 
-                        "score": scores.get('KeyWord', 0),
-                        "maxScore": weights['KeyWord'],
-                        "feedback": f"Key information coverage: {scores.get('KeyWord', 0)}/{weights['KeyWord']}",
-                        "details": detailed_feedback.get('KeyWord', {})
-                    },
-                    {
-                        "name": "Flow & Structure",
-                        "score": scores.get('Flow', 0),
-                        "maxScore": weights['Flow'],
-                        "feedback": f"Introduction flow: {scores.get('Flow', 0)}/{weights['Flow']}",
-                        "details": detailed_feedback.get('Flow', {})
-                    }
+                    {"name": "Salutation Level", "score": scores.get('Salutation', 0), "maxScore": weights['Salutation'],
+                     "feedback": f"Salutation effectiveness: {scores.get('Salutation', 0)}/{weights['Salutation']}", "details": detailed_feedback.get('Salutation', {})},
+                    {"name": "Keyword Presence", "score": scores.get('KeyWord', 0), "maxScore": weights['KeyWord'],
+                     "feedback": f"Key information coverage: {scores.get('KeyWord', 0)}/{weights['KeyWord']}", "details": detailed_feedback.get('KeyWord', {})},
+                    {"name": "Flow & Structure", "score": scores.get('Flow', 0), "maxScore": weights['Flow'],
+                     "feedback": f"Introduction flow: {scores.get('Flow', 0)}/{weights['Flow']}", "details": detailed_feedback.get('Flow', {})}
                 ]
             },
             {
-                "category": "Speech Rate", 
+                "category": "Speech Rate",
                 "metrics": [
-                    {
-                        "name": "Speech Rate (words/min)",
-                        "score": scores.get('SpeechRate', 0),
-                        "maxScore": weights['SpeechRate'],
-                        "feedback": f"Speech pace: {round(speech_rate, 2)} words/minute",
-                        "details": detailed_feedback.get('SpeechRate', {})
-                    }
+                    {"name": "Speech Rate (words/min)", "score": scores.get('SpeechRate', 0), "maxScore": weights['SpeechRate'],
+                     "feedback": f"Speech pace: {round(speech_rate, 2)} words/minute", "details": detailed_feedback.get('SpeechRate', {})}
                 ]
             },
             {
                 "category": "Language & Grammar",
                 "metrics": [
-                    {
-                        "name": "Grammar Accuracy",
-                        "score": scores.get('Error', 0),
-                        "maxScore": weights['Error'],
-                        "feedback": f"Grammar and language accuracy",
-                        "details": detailed_feedback.get('Error', {})
-                    },
-                    {
-                        "name": "Vocabulary Richness",
-                        "score": scores.get('Richness', 0),
-                        "maxScore": weights['Richness'],
-                        "feedback": f"Vocabulary diversity and richness",
-                        "details": detailed_feedback.get('Richness', {})
-                    }
+                    {"name": "Grammar Accuracy", "score": scores.get('Error', 0), "maxScore": weights['Error'],
+                     "feedback": "Grammar and language accuracy", "details": detailed_feedback.get('Error', {})},
+                    {"name": "Vocabulary Richness", "score": scores.get('Richness', 0), "maxScore": weights['Richness'],
+                     "feedback": "Vocabulary diversity and richness", "details": detailed_feedback.get('Richness', {})}
                 ]
             },
             {
                 "category": "Clarity",
                 "metrics": [
-                    {
-                        "name": "Filler Word Rate", 
-                        "score": scores.get('FillerWordRate', 0),
-                        "maxScore": weights['FillerWordRate'],
-                        "feedback": f"Clarity and filler word usage",
-                        "details": detailed_feedback.get('FillerWordRate', {})
-                    }
+                    {"name": "Filler Word Rate", "score": scores.get('FillerWordRate', 0), "maxScore": weights['FillerWordRate'],
+                     "feedback": "Clarity and filler word usage", "details": detailed_feedback.get('FillerWordRate', {})}
                 ]
             },
             {
                 "category": "Engagement",
                 "metrics": [
-                    {
-                        "name": "Sentiment & Positivity",
-                        "score": scores.get('Sentiment', 0),
-                        "maxScore": weights['Sentiment'],
-                        "feedback": f"Positive tone and engagement",
-                        "details": detailed_feedback.get('Sentiment', {})
-                    }
+                    {"name": "Sentiment & Positivity", "score": scores.get('Sentiment', 0), "maxScore": weights['Sentiment'],
+                     "feedback": "Positive tone and engagement", "details": detailed_feedback.get('Sentiment', {})}
                 ]
             }
         ]
     }
     
+    print("Analysis complete!", file=sys.stderr)
     return result
+
 
 if __name__ == "__main__":
     try:
@@ -654,9 +550,6 @@ if __name__ == "__main__":
         print(json.dumps(result))
         
     except Exception as e:
-        error_result = {
-            "error": str(e),
-            "overallScore": 0,
-            "criteriaScores": []
-        }
+        print(f"Error: {str(e)}", file=sys.stderr)
+        error_result = {"error": str(e), "overallScore": 0, "criteriaScores": []}
         print(json.dumps(error_result))
