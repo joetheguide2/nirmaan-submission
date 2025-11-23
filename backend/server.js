@@ -50,7 +50,7 @@ app.post('/api/analyze-introduction', (req, res) => {
     submissions.push(submission);
 
     // Call Python script with proper Java configuration
-    const pythonProcess = spawn('python', [
+    const pythonProcess = spawn('python3', [
     './python/main.py', 
     JSON.stringify({
         introduction: introduction,
