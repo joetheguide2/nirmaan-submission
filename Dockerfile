@@ -1,7 +1,7 @@
 FROM node:18
 
-# Install Python, Java, and virtual environment tools
-RUN apt-get update && apt-get install -y python3 python3-pip python3-venv default-jre
+# Install Python, Java, and pip
+RUN apt-get update && apt-get install -y python3 python3-pip default-jre
 
 WORKDIR /app
 
@@ -18,12 +18,11 @@ RUN echo "=== Checking project structure ===" && \
     echo "=== Checking for package.json ===" && \
     find . -name "package.json" | head -10
 
+# Install Python dependencies globally
+RUN pip3 install -r backend/python/requirements.txt
+
 # Install backend dependencies
 RUN cd backend && npm install
-
-# Install Python dependencies in virtual environment
-RUN cd backend/python && python3 -m venv venv && \
-    ./venv/bin/pip install -r requirements.txt
 
 # Check frontend package.json to see what build system it uses
 RUN echo "=== Frontend package.json ===" && \
