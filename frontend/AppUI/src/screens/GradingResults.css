@@ -151,7 +151,7 @@
 .progress-bar {
   width: 100%;
   height: 8px;
-  background-color: #f39c12;
+  background-color: #fdebd0;
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 12px;
@@ -165,7 +165,7 @@
 }
 
 .metric-feedback {
-  color: #666;
+  color: #a04000;
   font-style: italic;
   font-size: 0.95rem;
 }
@@ -236,7 +236,7 @@
 }
 
 .improvement-tips ul {
-  color: #666;
+  color: #a04000;
   padding-left: 20px;
 }
 
@@ -287,37 +287,7 @@
   transform: translateY(-2px);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .grading-results {
-    padding: 20px 15px;
-  }
-  
-  .overall-score-card {
-    flex-direction: column;
-    text-align: center;
-    gap: 20px;
-  }
-  
-  .score-details {
-    padding-left: 0;
-    width: 100%;
-  }
-  
-  .final-summary {
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-  }
-  
-  .results-header h1 {
-    font-size: 2rem;
-  }
-}
-
+/* Loading and No Results States */
 .loading-state {
   text-align: center;
   padding: 60px 20px;
@@ -348,7 +318,7 @@
   font-style: italic;
 }
 
-/* Additional CSS for Enhanced Detailed Feedback */
+/* Enhanced Detailed Feedback - Orange Theme */
 
 /* Make metric headers clickable */
 .metric-header.clickable {
@@ -357,7 +327,7 @@
 }
 
 .metric-header.clickable:hover {
-  background-color: rgba(0, 123, 255, 0.05);
+  background-color: rgba(230, 126, 34, 0.05);
 }
 
 .metric-score-wrapper {
@@ -368,37 +338,37 @@
 
 .expand-icon {
   font-size: 12px;
-  color: #666;
+  color: #d35400;
   transition: transform 0.2s ease;
 }
 
 /* Percentage on score circle */
 .score-percentage {
   font-size: 14px;
-  color: #666;
+  color: #d35400;
   margin-top: 5px;
 }
 
-/* Progress bar colors */
+/* Progress bar colors - Orange variants */
 .progress-fill.excellent {
-  background: linear-gradient(90deg, #28a745, #20c997);
+  background: linear-gradient(90deg, #27ae60, #2ecc71);
 }
 
 .progress-fill.good {
-  background: linear-gradient(90deg, #ffc107, #fd7e14);
+  background: linear-gradient(90deg, #f39c12, #e67e22);
 }
 
 .progress-fill.needs-improvement {
-  background: linear-gradient(90deg, #dc3545, #e83e8c);
+  background: linear-gradient(90deg, #e74c3c, #c0392b);
 }
 
 /* Detailed Feedback Section */
 .metric-details-expanded {
   margin-top: 15px;
   padding: 15px;
-  background: #f8f9fa;
+  background: #fef9e7;
   border-radius: 8px;
-  border-left: 4px solid #007bff;
+  border-left: 4px solid #e67e22;
   animation: slideDown 0.3s ease;
 }
 
@@ -431,18 +401,19 @@
 }
 
 .feedback-section strong {
-  color: #333;
+  color: #a04000;
   font-weight: 600;
 }
 
 .suggestion {
-  color: #0056b3;
+  color: #d35400;
   font-style: italic;
   padding: 8px;
-  background: #e7f3ff;
+  background: #fef5e7;
   border-radius: 4px;
   margin-top: 8px;
   display: block;
+  border-left: 3px solid #e67e22;
 }
 
 /* Keyword Matching Display */
@@ -458,7 +429,7 @@
 .positive-words h5 {
   font-size: 13px;
   font-weight: 600;
-  color: #495057;
+  color: #a04000;
   margin-bottom: 8px;
 }
 
@@ -472,28 +443,31 @@
 .matched-keywords li {
   padding: 6px 10px;
   margin: 4px 0;
-  background: #d4edda;
-  border-left: 3px solid #28a745;
+  background: #fef9e7;
+  border-left: 3px solid #27ae60;
   border-radius: 4px;
+  color: #196f3d;
 }
 
 .missing-keywords li {
   padding: 6px 10px;
   margin: 4px 0;
-  background: #fff3cd;
-  border-left: 3px solid #ffc107;
+  background: #fef5e7;
+  border-left: 3px solid #f39c12;
   border-radius: 4px;
+  color: #a04000;
 }
 
 .grammar-errors li {
   padding: 8px 10px;
   margin: 6px 0;
-  background: #f8d7da;
-  border-left: 3px solid #dc3545;
+  background: #fdedec;
+  border-left: 3px solid #e74c3c;
   border-radius: 4px;
+  color: #922b21;
 }
 
-/* Badges */
+/* Badges - Orange theme */
 .similarity-badge,
 .points-badge {
   display: inline-block;
@@ -505,19 +479,19 @@
 }
 
 .similarity-badge {
-  background: #007bff;
+  background: #e67e22;
   color: white;
 }
 
 .points-badge {
-  background: #28a745;
+  background: #27ae60;
   color: white;
 }
 
 .suggestion-text {
   display: block;
   font-size: 12px;
-  color: #666;
+  color: #d35400;
   margin-top: 4px;
   font-style: italic;
 }
@@ -526,7 +500,7 @@
 .error-suggestions {
   display: block;
   font-size: 12px;
-  color: #0056b3;
+  color: #a04000;
   margin-top: 4px;
   padding-left: 15px;
 }
@@ -534,16 +508,97 @@
 /* Filler Words and Positive Words Display */
 .found-fillers p,
 .positive-words p {
-  background: #fff;
+  background: #fef9e7;
   padding: 8px;
   border-radius: 4px;
-  border: 1px solid #dee2e6;
+  border: 1px solid #f39c12;
   font-family: 'Courier New', monospace;
   font-size: 13px;
+  color: #a04000;
+}
+
+/* Additional Orange Theme Enhancements */
+.loading-spinner-large {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f39c12;
+  border-top: 4px solid #e67e22;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Grammar errors with orange theme */
+.grammar-error-item {
+  padding: 8px 12px;
+  margin: 6px 0;
+  background: #fdedec;
+  border-left: 3px solid #e74c3c;
+  border-radius: 4px;
+  color: #922b21;
+}
+
+.grammar-error-item .suggestion {
+  background: #fef9e7;
+  border-left: 2px solid #f39c12;
+}
+
+/* Positive sentiment display */
+.positive-words-display {
+  background: #fef9e7;
+  border: 1px solid #f39c12;
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 8px;
+}
+
+.positive-word {
+  display: inline-block;
+  background: #e67e22;
+  color: white;
+  padding: 2px 8px;
+  margin: 2px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .grading-results {
+    max-width: 100%;
+    padding: 20px 15px;
+  }
+  
+  .overall-score-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  
+  .score-details {
+    padding-left: 0;
+    width: 100%;
+  }
+  
+  .final-summary {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .results-header h1 {
+    font-size: 2rem;
+  }
+  
   .metric-details-expanded {
     padding: 12px;
   }
@@ -559,4 +614,21 @@
     margin-top: 4px;
     width: fit-content;
   }
+}
+
+/* Score quality indicators */
+.score-quality-excellent {
+  color: #27ae60;
+}
+
+.score-quality-good {
+  color: #e67e22;
+}
+
+.score-quality-fair {
+  color: #f39c12;
+}
+
+.score-quality-poor {
+  color: #e74c3c;
 }
