@@ -1,12 +1,15 @@
 from collections import defaultdict
 
 
+
 intro_text = """Hello everyone, myself Muskan, studying in class 8th B section from Christ Public School. 
 I am 13 years old. I live with my family. There are 3 people in my family, me, my mother and my father.
 One special thing about my family is that they are very kind hearted to everyone and soft spoken. One thing I really enjoy is play, playing cricket and taking wickets.
 A fun fact about me is that I see in mirror and talk by myself. One thing people don't know about me is that I once stole a toy from one of my cousin.
  My favorite subject is science because it is very interesting. Through science I can explore the whole world and make the discoveries and improve the lives of others. 
 Thank you for listening."""
+
+duration = 42
 
 gradingCriterion = [
     "ContentAndStucture",
@@ -63,7 +66,8 @@ def grade(text, gradingCriterion, subCriterion, weights):
                 "Hey team",
                 "Greetings",
                 "Hi everyone",
-                "Hey everyone"
+                "Hey everyone",
+                "Hello everyone",
             ]
 
             mid = [
@@ -71,7 +75,6 @@ def grade(text, gradingCriterion, subCriterion, weights):
                 "Good Afternoon", 
                 "Good Evening",
                 "Good Day",
-                "Hello everyone",
                 "Good morning everyone",
                 "Good afternoon everyone",
                 "Good evening everyone",
@@ -79,8 +82,6 @@ def grade(text, gradingCriterion, subCriterion, weights):
                 "Ladies and gentlemen, hello",
                 "Dear team, hello",
                 "Dear all, hello",
-                "To all attendees, hello",
-                "Salutations everyone",
                 "Warm greetings everyone"
             ]
             strong = [
@@ -117,21 +118,25 @@ def grade(text, gradingCriterion, subCriterion, weights):
                 "I'm really looking forward to sharing my story with you all"
             ]
             for txt in basic:
-                if(txt.lower in text.lower):
+                if(txt.lower() in text.lower()):
                     score = 2
                     break
 
             for txt in mid:
-                if(txt.lower in text.lower):
+                if(txt.lower() in text.lower()):
                     score = 4
                     break
             for txt in strong:
-                if(txt.lower in text.lower):
+                if(txt.lower() in text.lower()):
                     score = 5
                     break
 
             scores[criteria] = score
         
-        if(criteria == ''):
+        if(criteria == 'KeyWord'):
             pass
-            
+
+    return scores
+
+scores = grade(intro_text, gradingCriterion=gradingCriterion, subCriterion=subCriterion, weights=weights)
+print(scores)
