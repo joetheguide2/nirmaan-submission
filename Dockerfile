@@ -1,7 +1,7 @@
 FROM node:18
 
-# Install Python and Java
-RUN apt-get update && apt-get install -y python3 python3-pip default-jre
+# Install Python, Java, and virtual environment tools
+RUN apt-get update && apt-get install -y python3 python3-pip python3-venv default-jre
 
 WORKDIR /app
 
@@ -11,8 +11,9 @@ COPY . .
 # Install backend dependencies
 RUN cd backend && npm install
 
-# Install Python dependencies
-RUN cd backend/python && pip3 install -r requirements.txt
+# Create and use Python virtual environment
+RUN cd backend/python && python3 -m venv venv && \
+    ./venv/bin/pip install -r requirements.txt
 
 # Install and build frontend
 RUN cd frontend && npm install && npm run build
