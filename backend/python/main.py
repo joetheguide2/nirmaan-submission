@@ -8,25 +8,11 @@ import json
 import sys
 
 # PRE-LOAD ALL MODELS AT MODULE LEVEL (only once)
-print("Starting model initialization...", file=sys.stderr, flush=True)
-
-try:
-    print("Loading SentenceTransformer...", file=sys.stderr, flush=True)
-    SENTENCE_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
-    print("SentenceTransformer loaded!", file=sys.stderr, flush=True)
-    
-    print("Loading LanguageTool...", file=sys.stderr, flush=True)
-    GRAMMAR_TOOL = language_tool_python.LanguageTool('en-US')
-    print("LanguageTool loaded!", file=sys.stderr, flush=True)
-    
-    print("Loading SentimentAnalyzer...", file=sys.stderr, flush=True)
-    SENTIMENT_ANALYZER = SentimentIntensityAnalyzer()
-    print("SentimentAnalyzer loaded!", file=sys.stderr, flush=True)
-    
-    print("All models loaded successfully!", file=sys.stderr, flush=True)
-except Exception as e:
-    print(f"ERROR loading models: {str(e)}", file=sys.stderr, flush=True)
-    raise
+print("Loading models...", file=sys.stderr)
+SENTENCE_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+GRAMMAR_TOOL = language_tool_python.LanguageTool('en-US')
+SENTIMENT_ANALYZER = SentimentIntensityAnalyzer()
+print("Models loaded successfully!", file=sys.stderr)
 
 
 def check_flow_order(text, model=None):
@@ -556,28 +542,14 @@ def analyze_introduction(text, duration):
 
 if __name__ == "__main__":
     try:
-        print("Script started, parsing input...", file=sys.stderr, flush=True)
         input_data = json.loads(sys.argv[1])
         text = input_data['introduction']
         duration = input_data['duration']
         
-        print(f"Processing text: {len(text)} chars, duration: {duration}s", file=sys.stderr, flush=True)
         result = analyze_introduction(text, duration)
-        
-        print("Analysis complete, returning result...", file=sys.stderr, flush=True)
-        print(json.dumps(result), flush=True)
-        sys.exit(0)
+        print(json.dumps(result))
         
     except Exception as e:
-        print(f"FATAL ERROR: {str(e)}", file=sys.stderr, flush=True)
-        import traceback
-        traceback.print_exc(file=sys.stderr)
-        
-        error_result = {
-            "error": str(e), 
-            "overallScore": 0, 
-            "criteriaScores": [],
-            "errorType": type(e).__name__
-        }
-        print(json.dumps(error_result), flush=True)
-        sys.exit(1)
+        print(f"Error: {str(e)}", file=sys.stderr)
+        error_result = {"error": str(e), "overallScore": 0, "criteriaScores": []}
+        print(json.dumps(error_result))
