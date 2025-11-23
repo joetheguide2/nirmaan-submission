@@ -3,12 +3,11 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-      },
-    },
+  build: {
+    outDir: 'dist'
   },
+  // Update this to your Railway backend URL
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'nirmaan-submission-production.up.railway.app')
+  }
 })
