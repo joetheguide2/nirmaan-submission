@@ -49,20 +49,20 @@ app.post('/api/analyze-introduction', (req, res) => {
 
     submissions.push(submission);
 
-    // Call Python script
+    // Call Python script with proper Java configuration
     const pythonProcess = spawn('/home/joetheguide/Documents/dev/nirmaan-submission-root/nirmaan-submission/backend/env/bin/python', [
         './python/main.py', 
         JSON.stringify({
             introduction: introduction,
             duration: parseFloat(duration)
         })
-        ], {
+    ], {
         env: {
             ...process.env,
-            'JAVA_HOME': '/home/joetheguide/.jdks/openjdk-24.0.2', // Adjust path as needed
+            'JAVA_HOME': '/home/joetheguide/.jdks/openjdk-24.0.2',
             'PATH': `/home/joetheguide/.jdks/openjdk-24.0.2/bin:${process.env.PATH}`
         }
-        });
+    });
 
     let result = '';
     let errorOutput = '';
@@ -73,7 +73,7 @@ app.post('/api/analyze-introduction', (req, res) => {
 
     pythonProcess.stderr.on('data', (data) => {
       errorOutput += data.toString();
-      console.error('Python Error:', data.toString());
+      console.error('Python stderr:', data.toString());
     });
 
     pythonProcess.on('close', (code) => {
@@ -99,26 +99,40 @@ app.post('/api/analyze-introduction', (req, res) => {
 
         } catch (parseError) {
           console.error('JSON Parse Error:', parseError);
+          console.error('Raw output:', result);
           res.status(500).json({
             success: false,
             message: 'Error parsing analysis results',
-            error: errorOutput
+            error: errorOutput || parseError.message,
+            rawOutput: result
           });
         }
       } else {
+        console.error('Python process exited with code:', code);
         res.status(500).json({
           success: false,
           message: 'Analysis failed',
-          error: errorOutput
+          error: errorOutput,
+          exitCode: code
         });
       }
+    });
+
+    pythonProcess.on('error', (error) => {
+      console.error('Failed to start Python process:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to start analysis process',
+        error: error.message
+      });
     });
 
   } catch (error) {
     console.error('Server Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: error.message
     });
   }
 });
@@ -166,11 +180,9 @@ app.delete('/api/submissions', (req, res) => {
   });
 });
 
-// Catch-all handler for React routing - FIXED VERSION
+// Catch-all handler for React routing
 app.get('*', (req, res) => {
-  // Only serve index.html for non-API routes
   if (!req.path.startsWith('/api/')) {
-    // Check if build directory exists
     const buildPath = path.join(__dirname, 'build', 'index.html');
     if (require('fs').existsSync(buildPath)) {
       res.sendFile(buildPath);
@@ -186,7 +198,6 @@ app.get('*', (req, res) => {
       });
     }
   } else {
-    // API route not found
     res.status(404).json({
       success: false,
       message: 'API endpoint not found'
@@ -199,7 +210,8 @@ app.use((error, req, res, next) => {
   console.error('Unhandled error:', error);
   res.status(500).json({
     success: false,
-    message: 'Something went wrong!'
+    message: 'Something went wrong!',
+    error: error.message
   });
 });
 
