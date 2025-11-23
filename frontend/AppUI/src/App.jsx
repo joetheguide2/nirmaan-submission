@@ -1,19 +1,40 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import IntroPage from "./screens/IntroPage"
-import GradingResults from './screens/GradingResults'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState } from 'react';
+import IntroPage from "./screens/IntroPage";
+import GradingResults from './screens/GradingResults';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [gradingResults, setGradingResults] = useState(null);
+
+  const handleGradingComplete = (results) => {
+    setGradingResults(results);
+  };
+
+  const handleTryAgain = () => {
+    setGradingResults(null);
+  };
 
   return (
-    <>
-      <IntroPage></IntroPage>
-      <GradingResults></GradingResults>
-    </>
-  )
+    <Router>
+      <Routes>
+        <Route 
+          path="/" 
+          element={
+            <IntroPage onGradingComplete={handleGradingComplete} />
+          } 
+        />
+        <Route 
+          path="/results" 
+          element={
+            <GradingResults 
+              results={gradingResults} 
+              onTryAgain={handleTryAgain} 
+            />
+          } 
+        />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;

@@ -1,10 +1,11 @@
 from collections import defaultdict
 from sentence_transformers import SentenceTransformer, util
-import torch
 import language_tool_python
 from lexicalrichness import LexicalRichness
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import re
+import json
+import sys
 
 
 def check_flow_order(text, model=None):
@@ -315,7 +316,7 @@ def calculate_positive_word_probability(text):
 
 def get_grammar_error_count(text):
 
-    tool = language_tool_python.LanguageTool('en-US')
+    tool = language_tool_python.LanguageToolPublicAPI('en-US')
     matches = tool.check(text)
     error_count = len(matches)
     tool.close()
@@ -380,8 +381,6 @@ class KeywordGrader:
 
 keyword_grader = KeywordGrader()
 
-
-
 def grade(text, gradingCriterion, subCriterion, weights):
     scores = defaultdict(int)
 
@@ -440,7 +439,6 @@ def grade(text, gradingCriterion, subCriterion, weights):
             # Use semantic checker for keyword matching
             keyword_score, matches = keyword_grader.calculate_keyword_score(text)
             scores[criteria] = min(keyword_score, weights[criteria])  # Cap at max weight
-            print(f"Keyword Matches Found: {matches}")
 
         if criteria == 'SpeechRate':
             words = text.split()
@@ -538,42 +536,147 @@ def grade(text, gradingCriterion, subCriterion, weights):
                 scores[criteria] = 0
     return scores
 
-# Test the code
-intro_text = """Hello everyone, myself Muskan, studying in class 8th B section from Christ Public School. 
-I am 13 years old. I live with my family. There are 3 people in my family, me, my mother and my father.
-One special thing about my family is that they are very kind hearted to everyone and soft spoken. One thing I really enjoy is play, playing cricket and taking wickets.
-A fun fact about me is that I see in mirror and talk by myself. One thing people don't know about me is that I once stole a toy from one of my cousin.
- My favorite subject is science because it is very interesting. Through science I can explore the whole world and make the discoveries and improve the lives of others. 
-Thank you for listening."""
 
-duration = 52.0
+def analyze_introduction(text, duration):
+    """
+    Main function to analyze introduction and return structured results
+    """
+    gradingCriterion = [
+        "ContentAndStucture",
+        "SpeechRate", 
+        "LanguageAndGrammar",
+        "Clarity",
+        "Engagement"
+    ]
 
-gradingCriterion = [
-    "ContentAndStucture",
-    "SpeechRate",
-    "LanguageAndGrammar",
-    "Clarity",
-    "Engagement"
-]
+    subCriterion = {
+        "ContentAndStucture": ['Salutation', 'KeyWord', 'Flow'],
+        "SpeechRate": ['SpeechRate'],
+        "LanguageAndGrammar": ['Error', 'Richness'],
+        "Clarity": ['FillerWordRate'],
+        "Engagement": ['Sentiment']
+    }
 
-subCriterion = {
-    "ContentAndStucture": ['Salutation', 'KeyWord', 'Flow'],
-    "SpeechRate": ['SpeechRate'],
-    "LanguageAndGrammar": ['Error', 'Richness'],
-    "Clarity": ['FillerWordRate'],
-    "Engagement": ['Sentiment']
-}
+    weights = {
+        'Salutation': 5, 
+        'KeyWord': 30, 
+        'Flow': 5,
+        'SpeechRate': 10,
+        'Error': 10, 
+        'Richness': 10,
+        'FillerWordRate': 15,
+        'Sentiment': 15
+    }
 
-weights = {
-    'Salutation': 5, 
-    'KeyWord': 30, 
-    'Flow': 5,
-    'SpeechRate': 10,
-    'Error': 10,
-    'Richness': 10,
-    'FillerWordRate': 15,
-    'Sentiment': 15
-}
+    # Calculate scores using your existing grade function
+    scores = grade(text, gradingCriterion, subCriterion, weights)
+    
+    # Calculate overall score
+    overall_score = sum(scores.values())
+    
+    # Calculate speech rate for additional info
+    word_count = len(text.split())
+    speech_rate = word_count / (duration / 60) if duration > 0 else 0
+    
+    # Structure the response for UI
+    result = {
+        "overallScore": overall_score,
+        "totalDuration": duration,
+        "wordCount": word_count,
+        "speechRate": round(speech_rate, 2),
+        "criteriaScores": [
+            {
+                "category": "Content & Structure",
+                "metrics": [
+                    {
+                        "name": "Salutation Level",
+                        "score": scores.get('Salutation', 0),
+                        "maxScore": weights['Salutation'],
+                        "feedback": f"Salutation effectiveness: {scores.get('Salutation', 0)}/{weights['Salutation']}"
+                    },
+                    {
+                        "name": "Keyword Presence", 
+                        "score": scores.get('KeyWord', 0),
+                        "maxScore": weights['KeyWord'],
+                        "feedback": f"Key information coverage: {scores.get('KeyWord', 0)}/{weights['KeyWord']}"
+                    },
+                    {
+                        "name": "Flow & Structure",
+                        "score": scores.get('Flow', 0),
+                        "maxScore": weights['Flow'],
+                        "feedback": f"Introduction flow: {scores.get('Flow', 0)}/{weights['Flow']}"
+                    }
+                ]
+            },
+            {
+                "category": "Speech Rate", 
+                "metrics": [
+                    {
+                        "name": "Speech Rate (words/min)",
+                        "score": scores.get('SpeechRate', 0),
+                        "maxScore": weights['SpeechRate'],
+                        "feedback": f"Speech pace: {round(speech_rate, 2)} words/minute"
+                    }
+                ]
+            },
+            {
+                "category": "Language & Grammar",
+                "metrics": [
+                    {
+                        "name": "Grammar Accuracy",
+                        "score": scores.get('Error', 0),
+                        "maxScore": weights['Error'],
+                        "feedback": f"Grammar and language accuracy"
+                    },
+                    {
+                        "name": "Vocabulary Richness",
+                        "score": scores.get('Richness', 0),
+                        "maxScore": weights['Richness'],
+                        "feedback": f"Vocabulary diversity and richness"
+                    }
+                ]
+            },
+            {
+                "category": "Clarity",
+                "metrics": [
+                    {
+                        "name": "Filler Word Rate", 
+                        "score": scores.get('FillerWordRate', 0),
+                        "maxScore": weights['FillerWordRate'],
+                        "feedback": f"Clarity and filler word usage"
+                    }
+                ]
+            },
+            {
+                "category": "Engagement",
+                "metrics": [
+                    {
+                        "name": "Sentiment & Positivity",
+                        "score": scores.get('Sentiment', 0),
+                        "maxScore": weights['Sentiment'],
+                        "feedback": f"Positive tone and engagement"
+                    }
+                ]
+            }
+        ]
+    }
+    
+    return result
 
-scores = grade(intro_text, gradingCriterion=gradingCriterion, subCriterion=subCriterion, weights=weights)
-print("\nFinal Scores:", dict(scores))
+if __name__ == "__main__":
+    # Read input from command line
+    try:
+        input_data = json.loads(sys.argv[1])
+        text = input_data['introduction']
+        duration = input_data['duration']
+        
+        result = analyze_introduction(text, duration)
+        print(json.dumps(result))
+        
+    except Exception as e:
+        error_result = {
+            "error": str(e),
+            "overallScore": 0,
+            "criteriaScores": []
+        }
+        print(json.dumps(error_result))
