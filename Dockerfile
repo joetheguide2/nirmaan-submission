@@ -13,8 +13,8 @@ RUN echo "=== Checking project structure ===" && \
     ls -la && \
     echo "=== Frontend structure ===" && \
     ls -la frontend/ && \
-    echo "=== Checking for public directory ===" && \
-    find . -name "public" -type d && \
+    echo "=== Checking for index.html ===" && \
+    find . -name "index.html" && \
     echo "=== Checking for package.json ===" && \
     find . -name "package.json" | head -10
 
@@ -25,26 +25,16 @@ RUN cd backend && npm install
 RUN cd backend/python && python3 -m venv venv && \
     ./venv/bin/pip install -r requirements.txt
 
-# Check if frontend has the required structure
-RUN echo "=== Frontend detailed structure ===" && \
+# Check frontend package.json to see what build system it uses
+RUN echo "=== Frontend package.json ===" && \
     cd frontend && \
-    ls -la && \
-    echo "=== Public directory contents ===" && \
-    ls -la public/ || echo "No public directory found"
+    cat package.json | grep -A 5 -B 5 "scripts"
 
-# Install and build frontend (with error handling)
-RUN cd frontend && npm install && \
-    # Create public directory if it doesn't exist
-    mkdir -p public && \
-    # Check if we need to move index.html
-    if [ ! -f public/index.html ] && [ -f ../index.html ]; then \
-        echo "Moving index.html from root to frontend/public" && \
-        cp ../index.html public/; \
-    fi && \
-    npm run build
+# Install and build frontend with VITE (not React Scripts)
+RUN cd frontend && npm install && npm run build
 
 # Copy frontend build to backend
-RUN cp -r frontend/build backend/public/ || mkdir -p backend/public && cp -r frontend/build/* backend/public/
+RUN cp -r frontend/dist backend/public/ || mkdir -p backend/public && cp -r frontend/dist/* backend/public/
 
 # Set working directory to backend
 WORKDIR /app/backend
