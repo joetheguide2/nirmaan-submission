@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "cd backend && npm start"
+
+[build.env]
+NODE_ENV = "production"
+
+# Define services
+[[services]]
+name = "web"
+run = "cd backend && npm start"

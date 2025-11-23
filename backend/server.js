@@ -50,18 +50,14 @@ app.post('/api/analyze-introduction', (req, res) => {
     submissions.push(submission);
 
     // Call Python script with proper Java configuration
-    const pythonProcess = spawn('/home/joetheguide/Documents/dev/nirmaan-submission-root/nirmaan-submission/backend/env/bin/python', [
-        './python/main.py', 
-        JSON.stringify({
-            introduction: introduction,
-            duration: parseFloat(duration)
+    const pythonProcess = spawn('python', [
+    './python/grading_api.py', 
+    JSON.stringify({
+        introduction: introduction,
+        duration: parseFloat(duration)
         })
     ], {
-        env: {
-            ...process.env,
-            'JAVA_HOME': '/home/joetheguide/.jdks/openjdk-24.0.2',
-            'PATH': `/home/joetheguide/.jdks/openjdk-24.0.2/bin:${process.env.PATH}`
-        }
+        env: process.env // Just pass the existing environment
     });
 
     let result = '';
