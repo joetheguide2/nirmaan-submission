@@ -1,13 +1,21 @@
 {
   "name": "nirmaan-frontend",
+  "type": "module",
   "scripts": {
-    "build": "react-scripts build",
-    "build-copy": "npm run build && cp -r build ../backend/"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build-copy": "npm run build && cp -r dist ../backend/public/"
   },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
     "react-router-dom": "^6.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.27",
+    "@types/react-dom": "^18.0.10",
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^4.1.0"
   }
 }
