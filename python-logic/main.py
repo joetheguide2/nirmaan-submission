@@ -2,9 +2,298 @@ from collections import defaultdict
 from sentence_transformers import SentenceTransformer, util
 import torch
 import language_tool_python
-from mtld import mtld 
+from lexicalrichness import LexicalRichness
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import re
+
+
+def check_flow_order(text, model=None):
+    """
+    Checks if the text follows the correct flow order:
+    Salutation -> Name -> Mandatory -> Optional (if present) -> Closing
+    
+    Returns:
+        bool: True if flow is correct, False otherwise
+    """
+    if model is None:
+        flow_model = SentenceTransformer('all-MiniLM-L6-v2')
+    else:
+        flow_model = model
+    
+    # Define comprehensive patterns for each section
+    patterns = {
+        'salutation': [
+            # Basic
+            r'\b(hi|hello|hey|greetings)\b',
+            r'\bhey there\b',
+            r'\bhi there\b',
+            r'\bhello there\b',
+            r'\bhi all\b',
+            r'\bhey all\b',
+            r'\bhi team\b',
+            r'\bhello team\b',
+            r'\bhey team\b',
+            r'\bhi everyone\b',
+            r'\bhello everyone\b',
+            r'\bhey everyone\b',
+            # Mid-level
+            r'\bgood morning\b',
+            r'\bgood afternoon\b',
+            r'\bgood evening\b',
+            r'\bgood day\b',
+            r'\bgood morning everyone\b',
+            r'\bgood afternoon everyone\b',
+            r'\bgood evening everyone\b',
+            r'\ba very good day to you all\b',
+            r'\bladies and gentlemen\b',
+            r'\bdear team\b',
+            r'\bdear all\b',
+            r'\bwarm greetings\b',
+            # Strong
+            r'\bthrilled to\b',
+            r'\bpleased to\b',
+            r'\bexcited to\b',
+            r'\bexcited to introduce myself\b',
+            r'\bfeeling great to be here\b',
+            r'\bso excited to be here\b',
+            r'\bthrilled to introduce myself\b',
+            r'\babsolutely delighted to share\b',
+            r'\bpleasure to finally introduce myself\b',
+            r'\bincredibly excited to present myself\b',
+            r'\bfeeling wonderful and excited\b',
+            r'\bpleased to share my introduction\b',
+            r'\bpleased to introduce myself\b',
+            r'\bhonored to share\b',
+            r'\bhonored to introduce myself\b',
+            r'\bdelighted to share my story\b',
+            r'\bdelighted to introduce myself\b',
+            r'\bthrilled to share who i am\b',
+            r'\bcan\'t wait to tell you\b',
+            r'\bbursting with excitement\b',
+            r'\bfantastic day to share\b',
+            r'\blooking forward to sharing my story\b',
+        ],
+        'name': [
+            r'\bmy name is\b',
+            r'\bmyself\b',
+            r'\bi am\b',
+            r'\bi\'m\b',
+            r'\bcalled\b',
+            r'\bi go by\b',
+            r'\bpeople call me\b',
+            r'\byou can call me\b',
+            r'\bthey call me\b',
+            r'\bmy name\'s\b',
+            r'\bi am known as\b',
+            r'\bi\'m known as\b',
+            r'\bthis is\b',
+        ],
+        'mandatory': [
+            # Age
+            r'\byears old\b',
+            r'\bage\b',
+            r'\bold\b',
+            r'\bi am \d+\b',
+            r'\bi\'m \d+\b',
+            r'\bmy age is\b',
+            r'\bi\'m aged\b',
+            # School/Class
+            r'\bschool\b',
+            r'\bof class\b',
+            r'\bin grade\b',
+            r'\bstudent of\b',
+            r'\bstudying in\b',
+            r'\bsection\b',
+            r'\bfrom school\b',
+            r'\bi study in\b',
+            r'\bi\'m a student\b',
+            r'\bi attend\b',
+            r'\bi go to school\b',
+            r'\benrolled in\b',
+            r'\bclass \d+\b',
+            r'\bgrade \d+\b',
+            # Family
+            r'\bfamily\b',
+            r'\bparents\b',
+            r'\bmother\b',
+            r'\bfather\b',
+            r'\bsiblings\b',
+            r'\blive with\b',
+            r'\bmembers\b',
+            r'\bfamily members\b',
+            r'\bpeople in my family\b',
+            r'\bmy family has\b',
+            r'\bthere are \d+ people\b',
+            r'\bi live with my family\b',
+            r'\bfamily consists of\b',
+            r'\bmy mom\b',
+            r'\bmy dad\b',
+            r'\bmy brother\b',
+            r'\bmy sister\b',
+            r'\bme, my\b',
+        ],
+        'optional': [
+            # Hobbies/Interests
+            r'\bhobbies\b',
+            r'\binterests\b',
+            r'\blike to\b',
+            r'\bfree time\b',
+            r'\benjoy\b',
+            r'\bplay\b',
+            r'\bplaying\b',
+            r'\bdoing\b',
+            r'\bi love\b',
+            r'\bi like\b',
+            r'\bi enjoy\b',
+            r'\bfavorite activity\b',
+            r'\bpassion\b',
+            r'\bone thing i enjoy\b',
+            r'\bone thing i really enjoy\b',
+            # Goals/Dreams
+            r'\bgoal\b',
+            r'\bdream\b',
+            r'\bambition\b',
+            r'\bwant to be\b',
+            r'\baspire\b',
+            r'\bfavorite subject\b',
+            r'\bwant\b',
+            r'\btry\b',
+            r'\bwill\b',
+            r'\bhope to\b',
+            r'\bi wish\b',
+            r'\bmy aim\b',
+            r'\bi plan to\b',
+            r'\blooking forward to\b',
+            r'\bin the future\b',
+            r'\bsomeday i will\b',
+            r'\bi would like to\b',
+            r'\bthrough .* i can\b',
+            r'\bexplore\b',
+            r'\bmake discoveries\b',
+            r'\bimprove the lives\b',
+            # Unique facts
+            r'\bunique\b',
+            r'\bfun fact\b',
+            r'\binteresting\b',
+            r'\bspecial\b',
+            r'\bpeople don\'t know\b',
+            r'\bone thing about me\b',
+            r'\bspecial thing\b',
+            r'\bone thing i\b',
+            r'\bsomething interesting\b',
+            r'\ba fun fact\b',
+            r'\bpeople might not know\b',
+            r'\bnot many know\b',
+            r'\bsecret\b',
+            r'\bone special thing\b',
+            # Strengths/Achievements
+            r'\bstrength\b',
+            r'\bachievement\b',
+            r'\bgood at\b',
+            r'\bskill\b',
+            r'\bimprove\b',
+            r'\bi excel at\b',
+            r'\bi\'m talented\b',
+            r'\bi can\b',
+            r'\bi\'m able to\b',
+            r'\bmy strength is\b',
+            r'\bproud of\b',
+            r'\baccomplished\b',
+            # Origin
+            r'\bfrom\b',
+            r'\bborn in\b',
+            r'\borigin\b',
+            r'\bhometown\b',
+            r'\bare from\b',
+        ],
+        'closing': [
+            r'\bthank you\b',
+            r'\bthanks\b',
+            r'\bthank you for listening\b',
+            r'\bthanks for your time\b',
+            r'\bappreciate\b',
+            r'\bgrateful\b',
+            r'\bthat\'s all\b',
+            r'\bthat\'s it\b',
+            r'\bthat\'s me\b',
+            r'\bthat\'s all about me\b',
+            r'\bthank you for your attention\b',
+            r'\bthanks for hearing me out\b',
+            r'\bi appreciate your time\b',
+            r'\blooking forward\b',
+            r'\bnice meeting you\b',
+            r'\bpleasure to share\b',
+            r'\bglad to share\b',
+            r'\bhappy to share\b',
+        ]
+    }
+    
+    # Split into sentences
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if s.strip() and len(s.strip()) > 5]
+    
+    if len(sentences) < 3:
+        return False
+    
+    # Match sentences to sections using keyword patterns
+    sentence_sections = []
+    
+    for i, sentence in enumerate(sentences):
+        sentence_lower = sentence.lower()
+        matched_section = None
+        
+        # Try to match with patterns
+        for section, pattern_list in patterns.items():
+            for pattern in pattern_list:
+                if re.search(pattern, sentence_lower):
+                    matched_section = section
+                    break
+            if matched_section:
+                break
+        
+        if matched_section:
+            sentence_sections.append({
+                'index': i,
+                'section': matched_section,
+                'sentence': sentence
+            })
+    
+    if not sentence_sections:
+        return False
+    
+    # Get first occurrence of each section
+    found_sections = {}
+    for item in sentence_sections:
+        section = item['section']
+        if section not in found_sections:
+            found_sections[section] = item['index']
+    
+    # Must have all required sections
+    required = ['salutation', 'name', 'mandatory', 'closing']
+    if not all(s in found_sections for s in required):
+        return False
+    
+    # Check order: salutation < name < mandatory < closing
+    if found_sections['salutation'] >= found_sections['name']:
+        return False
+    
+    if found_sections['name'] >= found_sections['mandatory']:
+        return False
+    
+    # Handle optional section if present
+    if 'optional' in found_sections:
+        # Optional should be after mandatory and before closing
+        if found_sections['mandatory'] >= found_sections['optional']:
+            return False
+        if found_sections['optional'] >= found_sections['closing']:
+            return False
+    else:
+        # No optional, so mandatory must come before closing
+        if found_sections['mandatory'] >= found_sections['closing']:
+            return False
+    
+    return True
+
 
 def calculate_positive_word_probability(text):
     analyzer = SentimentIntensityAnalyzer()
@@ -88,7 +377,7 @@ class KeywordGrader:
         
         return total_score, matches_found
 
-# Initialize the keyword grader
+
 keyword_grader = KeywordGrader()
 
 
@@ -104,14 +393,14 @@ def grade(text, gradingCriterion, subCriterion, weights):
             basic = [
                 "Hi", "Hello", "Hey", "Hey there", "Hi there", "Hello there", 
                 "Hi all", "Hey all", "Hi team", "Hello team", "Hey team", 
-                "Greetings", "Hi everyone", "Hey everyone", "Hello everyone",
+                "Greetings", "Hi everyone",
             ]
 
             mid = [
                 "Good Morning", "Good Afternoon", "Good Evening", "Good Day",
                 "Good morning everyone", "Good afternoon everyone", "Good evening everyone",
                 "A very good day to you all", "Ladies and gentlemen, hello",
-                "Dear team, hello", "Dear all, hello", "Warm greetings everyone"
+                "Dear team, hello", "Dear all, hello", "Warm greetings everyone", "Hello everyone", "hi everyone", "hey everyone"
             ]
             
             strong = [
@@ -155,7 +444,6 @@ def grade(text, gradingCriterion, subCriterion, weights):
 
         if criteria == 'SpeechRate':
             words = text.split()
-            print(words)
             rate = len(words)/(duration/60)
             score = 0
             if(111 <= rate <= 140):
@@ -176,11 +464,11 @@ def grade(text, gradingCriterion, subCriterion, weights):
             score = 0
             if(err >= 0.9):
                 score = 10
-            elif(0.7 <= err <= 0.89):
+            elif(0.7 <= err <= 0.899999999999):
                 score = 8
-            elif(0.5 <= err <= 0.69):
+            elif(0.5 <= err <= 0.699999999):
                 score = 6
-            elif (0.3 <= err <= 0.49):
+            elif (0.3 <= err <= 0.4999999):
                 score = 4
             else:
                 score = 2
@@ -188,17 +476,17 @@ def grade(text, gradingCriterion, subCriterion, weights):
             scores[criteria] = score
 
         if criteria == "Richness":
-
+            lex = LexicalRichness(text)
             words = text.lower().split()
-            mtld_score = mtld(words)/100
+            mtld_score = lex.mtld()/100
             score = 0
             if(0.9 <= mtld_score <= 1.0):
                 score = 10
-            elif(0.7 <= mtld_score <= 0.89):
+            elif(0.7 <= mtld_score <= 0.89999999999):
                 score = 8
-            elif(0.5 <= mtld_score <= 0.69):
+            elif(0.5 <= mtld_score <= 0.6999999999999999):
                 score = 6
-            elif(0.3 <= mtld_score <= 0.49):
+            elif(0.3 <= mtld_score <= 0.4999999999999999):
                 score = 4
             else:
                 score = 2
@@ -230,16 +518,24 @@ def grade(text, gradingCriterion, subCriterion, weights):
         if criteria == 'Sentiment':
             prob = calculate_positive_word_probability(text)
 
-            if(prob >= 0.9):
+            if(prob >= 0.999999999999):
                 score = 15
-            elif(0.7 <= prob <= 0.89):
+            elif(0.7 <= prob <= 0.8999999999999):
                 score = 12
-            elif(0.5 <= prob <= 0.69):
+            elif(0.5 <= prob <= 0.6999999999999):
                 score = 9
-            elif(0.3 <= prob <= 0.49):
+            elif(0.3 <= prob <= 0.4999999999999):
                 score = 6
             else:
                 score = 3
+
+            scores[criteria] = score
+
+        if criteria == 'Flow':
+            if(check_flow_order(text)):
+                scores[criteria] = 5
+            else:
+                scores[criteria] = 0
     return scores
 
 # Test the code
