@@ -176,27 +176,30 @@ app.delete('/api/submissions', (req, res) => {
   });
 });
 
-// Catch-all handler for React routing
+// FIXED: 404 handler for API routes only (must come BEFORE catch-all)
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'API endpoint not found',
+    requestedPath: req.path,
+    method: req.method
+  });
+});
+
+// Catch-all handler for React routing (must be LAST)
 app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api/')) {
-    const buildPath = path.join(__dirname, 'build', 'index.html');
-    if (require('fs').existsSync(buildPath)) {
-      res.sendFile(buildPath);
-    } else {
-      res.json({
-        message: 'Server is running. Frontend build not found.',
-        endpoints: {
-          health: '/api/health',
-          analyze: '/api/analyze-introduction',
-          results: '/api/results/:id',
-          submissions: '/api/submissions'
-        }
-      });
-    }
+  const buildPath = path.join(__dirname, 'build', 'index.html');
+  if (require('fs').existsSync(buildPath)) {
+    res.sendFile(buildPath);
   } else {
-    res.status(404).json({
-      success: false,
-      message: 'API endpoint not found'
+    res.json({
+      message: 'Server is running. Frontend build not found.',
+      endpoints: {
+        health: '/api/health',
+        analyze: '/api/analyze-introduction',
+        results: '/api/results/:id',
+        submissions: '/api/submissions'
+      }
     });
   }
 });

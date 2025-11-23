@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import './IntroductionForm.css';
 
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://nirmaan-submission.up.railway.app';
 const IntroductionForm = ({ onGradingComplete }) => {
   const [formData, setFormData] = useState({
     introduction: '',
@@ -39,7 +41,7 @@ const IntroductionForm = ({ onGradingComplete }) => {
     setError('');
 
     try {
-      const response = await fetch('/api/analyze-introduction', {
+      const response = await fetch(`${API_BASE_URL}/api/analyze-introduction`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

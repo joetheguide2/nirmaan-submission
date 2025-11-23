@@ -8,6 +8,6 @@ export default defineConfig({
   },
   // Update this to your Railway backend URL
   define: {
-    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'nirmaan-submission-production.up.railway.app')
+    'import.meta.env.VITE_API_URL': JSON.stringify('https://nirmaan-submission-production.up.railway.app')
   }
 })
