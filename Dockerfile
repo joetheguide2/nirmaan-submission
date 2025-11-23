@@ -8,10 +8,18 @@ WORKDIR /app
 # Copy everything
 COPY . .
 
+# Debug: Show the structure to verify files are there
+RUN echo "=== Checking project structure ===" && \
+    ls -la && \
+    echo "=== Frontend structure ===" && \
+    ls -la frontend/ && \
+    echo "=== Checking for package.json ===" && \
+    find . -name "package.json" | head -10
+
 # Install backend dependencies
 RUN cd backend && npm install
 
-# Create and use Python virtual environment
+# Install Python dependencies in virtual environment
 RUN cd backend/python && python3 -m venv venv && \
     ./venv/bin/pip install -r requirements.txt
 
