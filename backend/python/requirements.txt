@@ -1,7 +1,7 @@
-sentence-transformers==2.2.2
-language-tool-python==2.7.1
-lexicalrichness==0.3.2
-vaderSentiment==3.3.2
-torch>=2.0.0
-numpy>=1.21.0
+sentence-transformers
+language-tool-python
+lexicalrichness
+vaderSentiment
+torch
+numpy
 --extra-index-url https://download.pytorch.org/whl/cpu
