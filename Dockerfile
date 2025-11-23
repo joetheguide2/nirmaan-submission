@@ -19,7 +19,7 @@ RUN echo "=== Checking project structure ===" && \
     find . -name "package.json" | head -10
 
 # Install Python dependencies globally
-RUN pip3 install -r backend/python/requirements.txt
+RUN pip3 install --break-system-packages -r backend/python/requirements.txt
 
 # Install backend dependencies
 RUN cd backend && npm install
