@@ -21,6 +21,10 @@ RUN echo "=== Checking project structure ===" && \
 # Install Python dependencies globally
 RUN pip3 install --break-system-packages -r backend/python/requirements.txt
 
+# Pre-download LanguageTool and models to cache them
+RUN python3 -c "import language_tool_python; tool = language_tool_python.LanguageTool('en-US'); tool.close(); print('LanguageTool downloaded')"
+RUN python3 -c "from sentence_transformers import SentenceTransformer; model = SentenceTransformer('all-MiniLM-L6-v2'); print('SentenceTransformer downloaded')"
+
 # Install backend dependencies
 RUN cd backend && npm install
 
